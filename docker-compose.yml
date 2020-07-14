@@ -1,0 +1,84 @@
+version: "3"
+services:
+  #PHP Service
+  laravel_app01:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: laravel/php:7.2-fpm
+    container_name: laravel_app01
+    volumes:
+      - /home/torices/app01/:/var/www/app01
+      - /home/torices/docker/config/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: laravel_app01
+      SERVICE_TAGS: dev
+    working_dir: /var/www/app01
+    networks:
+      - laravel
+
+  #PHP Service
+  laravel_app02:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: laravel/php:7.2-fpm
+    container_name: laravel_app02
+    volumes:
+      - /home/torices/app02/:/var/www/app02
+      - /home/torices/docker/config/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: laravel_app02
+      SERVICE_TAGS: dev
+    working_dir: /var/www/app02
+    networks:
+      - laravel
+
+  #Nginx Service
+  laravel_nginx:
+    image: nginx:alpine
+    container_name: laravel_nginx
+    volumes:
+      - /home/torices/app01:/var/www/app01
+      - /home/torices/app02:/var/www/app02
+      - /home/torices/docker/config/nginx/conf.d:/etc/nginx/conf.d/
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8001:81"
+      - "8002:82"
+    networks:
+      - laravel
+
+  #MySQL Service
+  laravel_mysql:
+    image: mysql:5.7.22
+    container_name: laravel_mysql
+    volumes:
+      - /home/torices/laravel_dbdata:/var/lib/mysql
+      - /home/torices/docker/config/mysql/init:/docker-entrypoint-initdb.d
+      - /home/torices/docker/config/mysql/my.cnf:/etc/mysql/my.cnf
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3336:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: laravel
+      SERVICE_TAGS: dev
+      SERVICE_NAME: laravel_mysql
+    networks:
+      - laravel
+
+#Docker Networks
+networks:
+  laravel:
+    driver: bridge
+
+#Volumes
+volumes:
+  laravel_dbdata:
+    driver: local
